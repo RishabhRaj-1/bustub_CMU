@@ -15,10 +15,10 @@
 namespace bustub {
 
 ClockReplacer::ClockReplacer(size_t num_pages) {
-  clk_ptr = 0;                         /* initialize the clk_ptr, points to the first place */
-  buffer_size = num_pages;             /* The buffer size is the same number as num_pages */
-  reflag = vector<bool>(num_pages, 0); /* all the frames are not referred */
-  inflag = vector<bool>(num_pages, 0); /* all the frames are not in the ClockReplacer */
+  clk_ptr = 0;                              /* initialize the clk_ptr, points to the first place */
+  buffer_size = num_pages;                  /* The buffer size is the same number as num_pages */
+  reflag = std::vector<bool>(num_pages, 0); /* all the frames are not referred */
+  inflag = std::vector<bool>(num_pages, 0); /* all the frames are not in the ClockReplacer */
 }
 
 ClockReplacer::~ClockReplacer() = default;
@@ -30,11 +30,11 @@ ClockReplacer::~ClockReplacer() = default;
  * This should be the only method that updates the clock hand.
  */
 bool ClockReplacer::Victim(frame_id_t *frame_id) {
-  bool ret = false; /* have NOT find the result in the beginning */
-  short candi = -1; /* which frame to victim */
+  bool ret = false;   /* have NOT find the result in the beginning */
+  int16_t candi = -1; /* which frame to victim */
 
   for (auto i = 0; i < buffer_size; i++) {
-    short idx = (clk_ptr + i) % buffer_size;
+    int16_t idx = (clk_ptr + i) % buffer_size;
 
     /* IF find the first frame that is both in the `ClockReplacer`
      * and with its ref flag set to false */
@@ -44,10 +44,9 @@ bool ClockReplacer::Victim(frame_id_t *frame_id) {
       inflag[idx] = false;               /* new frame is not in the ClockReplacer */
       ret = true;                        /* found the victim, break immediately */
       break;
-    }
-    /* ELSE IF a frame is in the `ClockReplacer`,
-     * but its ref flag is set to true, change it to false instead */
-    else if (inflag[idx] && reflag[idx]) {
+    } else if (inflag[idx] && reflag[idx]) {
+      /* ELSE IF a frame is in the `ClockReplacer`,
+       * but its ref flag is set to true, change it to false instead */
       reflag[idx] = false; /* change ref flag to false, victim later */
       /* choose another candi to victim */
       candi = (candi == -1) ? idx : candi; /* IF there's no candidate, the first idx is to victim */
@@ -59,9 +58,7 @@ bool ClockReplacer::Victim(frame_id_t *frame_id) {
     /* IF there's NO candidates */
     if (candi == -1) {
       frame_id = nullptr;
-    }
-    /* ELSE there's one candidate with the ref flag set to true */
-    else {
+    } else {                               /* ELSE there's one candidate with the ref flag set to true */
       clk_ptr = (candi + 1) % buffer_size; /* update the clk_ptr */
       *frame_id = candi;
       inflag[candi] = false; /* the new frame is NOT in the ClockReplacer */

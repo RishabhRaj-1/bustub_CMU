@@ -18,8 +18,6 @@
 
 #include "buffer/replacer.h"
 #include "common/config.h"
-
-using namespace std;
 namespace bustub {
 
 /**
@@ -47,12 +45,10 @@ class ClockReplacer : public Replacer {
   size_t Size() override;
 
  private:
-  // TODO: implement me!
-
-  frame_id_t clk_ptr;      /* The current position of clock hand */
-  frame_id_t buffer_size;  /* The buffer size is the same number as num_pages */
-  vector<bool> reflag; /* Has this frame recently been unpinned (ref flag)? */
-  vector<bool> inflag; /* Is this frame currently in the ClockReplacer? */
+  frame_id_t clk_ptr;       /* The current position of clock hand */
+  frame_id_t buffer_size;   /* The buffer size is the same number as num_pages */
+  std::vector<bool> reflag; /* Has this frame recently been unpinned (ref flag)? */
+  std::vector<bool> inflag; /* Is this frame currently in the ClockReplacer? */
 };
 
 }  // namespace bustub
