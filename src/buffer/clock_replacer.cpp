@@ -99,6 +99,7 @@ void ClockReplacer::Unpin(frame_id_t frame_id) {
   return;
 }
 
+/* returns the number of frames that are currently in the ClockReplacer. */
 size_t ClockReplacer::Size() {
   size_t counter = 0;
 
