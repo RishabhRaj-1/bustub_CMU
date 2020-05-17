@@ -33,7 +33,7 @@ bool ClockReplacer::Victim(frame_id_t *frame_id) {
   bool ret = false; /* have NOT find the result in the beginning */
   short candi = -1; /* which frame to victim */
 
-  for (size_t i = 0; i < buffer_size; i++) {
+  for (auto i = 0; i < buffer_size; i++) {
     short idx = (clk_ptr + i) % buffer_size;
 
     /* IF find the first frame that is both in the `ClockReplacer`
