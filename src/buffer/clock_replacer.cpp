@@ -40,9 +40,9 @@ bool ClockReplacer::Victim(frame_id_t *frame_id) {
      * and with its ref flag set to false */
     if (inflag[idx] && !reflag[idx]) {
       clk_ptr = (idx + 1) % buffer_size; /* increase the clk_ptr by 1 */
-      *frame_id = idx;                   /* update the index of the new frame_id */
+      *frame_id = idx;                   /* update the frame_id to the idx */
       inflag[idx] = false;               /* new frame is not in the ClockReplacer */
-      ret = true;                        /* found the result, break immediately */
+      ret = true;                        /* found the victim, break immediately */
       break;
     }
     /* ELSE IF a frame is in the `ClockReplacer`,
@@ -78,14 +78,26 @@ bool ClockReplacer::Victim(frame_id_t *frame_id) {
  */
 void ClockReplacer::Pin(frame_id_t frame_id) {
   /* IF frame_id is invalid */
-  if (frame_id >= buffer_size || frame_id < 0) return; 
+  if (frame_id >= buffer_size || frame_id < 0) return;
 
   /* remove the frame containing the pinned page from the ClockReplacer */
-  inflag[frame_id] = false; 
+  inflag[frame_id] = false;
   return;
 }
 
-void ClockReplacer::Unpin(frame_id_t frame_id) {}
+/*
+ * This method should be called when the pin_count of a page becomes 0. This method should add
+ * the frame containing the unpinned page to the ClockReplacer.
+ */
+void ClockReplacer::Unpin(frame_id_t frame_id) {
+  /* IF frame_id is invalid */
+  if (frame_id >= buffer_size || frame_id < 0) return;
+
+  /* add the frame containing the unpinned page to the ClockReplacer */
+  inflag[frame_id] = true;
+  reflag[frame_id] = true;
+  return;
+}
 
 size_t ClockReplacer::Size() { return 0; }
 
