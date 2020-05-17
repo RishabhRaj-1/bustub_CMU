@@ -99,6 +99,15 @@ void ClockReplacer::Unpin(frame_id_t frame_id) {
   return;
 }
 
-size_t ClockReplacer::Size() { return 0; }
+size_t ClockReplacer::Size() {
+  size_t counter = 0;
+
+  for (auto i_flag : inflag) {
+    /* IF in the ClockReplacer, then take it into account */
+    if (i_flag) counter++;
+  }
+
+  return counter;
+}
 
 }  // namespace bustub
