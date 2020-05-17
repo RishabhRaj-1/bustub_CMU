@@ -43,7 +43,7 @@ bool ClockReplacer::Victim(frame_id_t *frame_id) {
       *frame_id = idx;                   /* update the frame_id to the idx */
       inflag[idx] = false;               /* new frame is not in the ClockReplacer */
       ret = true;                        /* found the victim, break immediately */
-      // break;
+      break;
     } else if (inflag[idx] && reflag[idx]) {
       /* ELSE IF a frame is in the `ClockReplacer`,
        * but its ref flag is set to true, change it to false instead */
@@ -75,7 +75,7 @@ bool ClockReplacer::Victim(frame_id_t *frame_id) {
  */
 void ClockReplacer::Pin(frame_id_t frame_id) {
   /* IF frame_id is valid */
-  if (frame_id < buffer_size && frame_id < 0) {
+  if (frame_id < buffer_size && frame_id > 0) {
     /* remove the frame containing the pinned page from the ClockReplacer */
     inflag[frame_id] = false;
   }
@@ -87,7 +87,7 @@ void ClockReplacer::Pin(frame_id_t frame_id) {
  */
 void ClockReplacer::Unpin(frame_id_t frame_id) {
   /* IF frame_id is valid */
-  if (frame_id >= buffer_size || frame_id < 0) {
+  if (frame_id < buffer_size || frame_id > 0) {
     /* add the frame containing the unpinned page to the ClockReplacer */
     inflag[frame_id] = true;
     reflag[frame_id] = true;
