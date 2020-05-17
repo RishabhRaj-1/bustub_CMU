@@ -15,10 +15,10 @@
 namespace bustub {
 
 ClockReplacer::ClockReplacer(size_t num_pages) {
-  clk_ptr = 0;                              /* initialize the clk_ptr, points to the first place */
-  buffer_size = num_pages;                  /* The buffer size is the same number as num_pages */
-  reflag = std::vector<bool>(num_pages, 0); /* all the frames are not referred */
-  inflag = std::vector<bool>(num_pages, 0); /* all the frames are not in the ClockReplacer */
+  clk_ptr = 0;                                  /* initialize the clk_ptr, points to the first place */
+  buffer_size = num_pages;                      /* The buffer size is the same number as num_pages */
+  reflag = std::vector<bool>(num_pages, false); /* all the frames are not referred */
+  inflag = std::vector<bool>(num_pages, false); /* all the frames are not in the ClockReplacer */
 }
 
 ClockReplacer::~ClockReplacer() = default;
@@ -43,7 +43,7 @@ bool ClockReplacer::Victim(frame_id_t *frame_id) {
       *frame_id = idx;                   /* update the frame_id to the idx */
       inflag[idx] = false;               /* new frame is not in the ClockReplacer */
       ret = true;                        /* found the victim, break immediately */
-      break;
+      // break;
     } else if (inflag[idx] && reflag[idx]) {
       /* ELSE IF a frame is in the `ClockReplacer`,
        * but its ref flag is set to true, change it to false instead */
@@ -74,12 +74,11 @@ bool ClockReplacer::Victim(frame_id_t *frame_id) {
  * It should remove the frame containing the pinned page from the ClockReplacer.
  */
 void ClockReplacer::Pin(frame_id_t frame_id) {
-  /* IF frame_id is invalid */
-  if (frame_id >= buffer_size || frame_id < 0) return;
-
-  /* remove the frame containing the pinned page from the ClockReplacer */
-  inflag[frame_id] = false;
-  return;
+  /* IF frame_id is valid */
+  if (frame_id < buffer_size && frame_id < 0) {
+    /* remove the frame containing the pinned page from the ClockReplacer */
+    inflag[frame_id] = false;
+  }
 }
 
 /*
@@ -87,13 +86,12 @@ void ClockReplacer::Pin(frame_id_t frame_id) {
  * the frame containing the unpinned page to the ClockReplacer.
  */
 void ClockReplacer::Unpin(frame_id_t frame_id) {
-  /* IF frame_id is invalid */
-  if (frame_id >= buffer_size || frame_id < 0) return;
-
-  /* add the frame containing the unpinned page to the ClockReplacer */
-  inflag[frame_id] = true;
-  reflag[frame_id] = true;
-  return;
+  /* IF frame_id is valid */
+  if (frame_id >= buffer_size || frame_id < 0) {
+    /* add the frame containing the unpinned page to the ClockReplacer */
+    inflag[frame_id] = true;
+    reflag[frame_id] = true;
+  }
 }
 
 /* returns the number of frames that are currently in the ClockReplacer. */
@@ -102,7 +100,9 @@ size_t ClockReplacer::Size() {
 
   for (auto i_flag : inflag) {
     /* IF in the ClockReplacer, then take it into account */
-    if (i_flag) counter++;
+    if (i_flag) {
+      counter++;
+    }
   }
 
   return counter;
