@@ -30,8 +30,8 @@ ClockReplacer::~ClockReplacer() = default;
  * This should be the only method that updates the clock hand.
  */
 bool ClockReplacer::Victim(frame_id_t *frame_id) {
-  bool ret = false;   /* have NOT find the result in the beginning */
-  short candi = -1;   /* which frame to victim */
+  bool ret = false; /* have NOT find the result in the beginning */
+  short candi = -1; /* which frame to victim */
 
   for (size_t i = 0; i < buffer_size; i++) {
     short idx = (clk_ptr + i) % buffer_size;
@@ -62,7 +62,7 @@ bool ClockReplacer::Victim(frame_id_t *frame_id) {
     }
     /* ELSE there's one candidate with the ref flag set to true */
     else {
-      clk_ptr = (candi + 1) % buffer_size;  /* update the clk_ptr */
+      clk_ptr = (candi + 1) % buffer_size; /* update the clk_ptr */
       *frame_id = candi;
       inflag[candi] = false; /* the new frame is NOT in the ClockReplacer */
       ret = true;            /* find a candidate, so change the result to true */
@@ -76,7 +76,14 @@ bool ClockReplacer::Victim(frame_id_t *frame_id) {
  * This method should be called after a page is pinned to a frame in the BufferPoolManager.
  * It should remove the frame containing the pinned page from the ClockReplacer.
  */
-void ClockReplacer::Pin(frame_id_t frame_id) {}
+void ClockReplacer::Pin(frame_id_t frame_id) {
+  /* IF frame_id is invalid */
+  if (frame_id >= buffer_size || frame_id < 0) return; 
+
+  /* remove the frame containing the pinned page from the ClockReplacer */
+  inflag[frame_id] = false; 
+  return;
+}
 
 void ClockReplacer::Unpin(frame_id_t frame_id) {}
 
