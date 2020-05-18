@@ -59,7 +59,7 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
   /* S1.2: If P does NOT exist, find a replacement page (R) */
   frame_id_t r_target; /* replacement page (R) */
 
-  /* IF: search the free list first */
+  /* S1.2 IF: search the free list first */
   if (!free_list_.empty()) {
     r_target = free_list_.front();
     free_list_.pop_front();
@@ -74,12 +74,37 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
 
     LOG_INFO("Fetch page %d from the fl", page_id);
     return &pages_[r_target];
-
-  } else { /* ELSE: search the replacer if not found in fl */
-    r_target = 3;
   }
 
-  return nullptr;
+  /* S1.2 ELSE: search the replacer if not found in fl */
+  bool evi_suc = replacer_->Victim(&r_target);         /* find the victim */
+  page_id_t evict_page = pages_[r_target].GetPageId(); /* get the victim page id */
+
+  /* IF no victim was found */
+  if (!evi_suc) {
+    return nullptr;
+  }
+
+  /* S2 IF: R is dirty, write it back to the disk */
+  if (pages_[r_target].IsDirty()) {           /* page in memory has been modified from that on disk */
+    bool flu_suc = FlushPageImpl(evict_page); /* flush the victim page to disk first */
+    /* IF evict_page could not be found in the page table */
+    if (!flu_suc) {
+      return nullptr;
+    }
+  }
+
+  replacer_->Pin(r_target);
+  pages_[r_target].pin_count_ += 1;
+
+  /* S3: delete R from the page table and insert P */
+  page_table_.erase(evict_page);
+  pages_[r_target].page_id_ = page_id; /* read to buffer */
+  pages_[r_target].is_dirty_ = false;
+  page_table_[page_id] = r_target;
+  disk_manager_->ReadPage(page_id, pages_[r_target].data_);
+
+  return &pages_[r_target];
 }
 
 bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) { return false; }
