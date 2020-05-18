@@ -55,28 +55,28 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
 
     LOG_INFO("Fetch page %d from mem", page_id);
     return &pages_[p_requested];
-  } else {               /* S1.2: If P does NOT exist, find a replacement page (R) */
-    frame_id_t r_target; /* replacement page (R) */
+  }
+  /* S1.2: If P does NOT exist, find a replacement page (R) */
+  frame_id_t r_target; /* replacement page (R) */
 
-    /* IF: search the free list first */
-    if (free_list_.size()) {
-      r_target = free_list_.front();
-      free_list_.pop_front();
-      replacer_->Pin(r_target);
-      pages_[r_target].pin_count_++; /* all in-memory pages in the system are represented by Page */
+  /* IF: search the free list first */
+  if (!free_list_.empty()) {
+    r_target = free_list_.front();
+    free_list_.pop_front();
+    replacer_->Pin(r_target);
+    pages_[r_target].pin_count_++; /* all in-memory pages in the system are represented by Page */
 
-      /* read to buffer */
-      pages_[r_target].page_id_ = page_id;
-      pages_[r_target].is_dirty_ = false;
-      page_table_[page_id] = r_target;
-      disk_manager_->ReadPage(page_id, pages_[r_target].data_);
+    /* read to buffer */
+    pages_[r_target].page_id_ = page_id;
+    pages_[r_target].is_dirty_ = false;
+    page_table_[page_id] = r_target;
+    disk_manager_->ReadPage(page_id, pages_[r_target].data_);
 
-      LOG_INFO("Fetch page %d from the fl", page_id);
-      return &pages_[r_target];
+    LOG_INFO("Fetch page %d from the fl", page_id);
+    return &pages_[r_target];
 
-    } else { /* ELSE: search the replacer if not found in fl */
-      r_target = 3;
-    }
+  } else { /* ELSE: search the replacer if not found in fl */
+    r_target = 3;
   }
 
   return nullptr;
