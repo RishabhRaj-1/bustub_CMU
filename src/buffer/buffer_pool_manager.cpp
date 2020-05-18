@@ -107,7 +107,34 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
   return &pages_[r_target];
 }
 
-bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) { return false; }
+bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
+  frame_id_t frame;
+
+  /* IF: page NOT found */
+  if (page_table_.find(page_id) == page_table_.end()) {
+    LOG_INFO("Unpin page %d from non-ex", page_id);
+    return true;
+  }
+
+  /* IF: the number of unpinned pages less or equal to 0, CANNOT unpin */
+  frame = page_table_[page_id];
+  if (pages_[frame].GetPinCount() <= 0) {
+    LOG_ERROR("Unpin page %d failed, pincnt <= 0", page_id);
+    return false;
+  }
+
+  /* the page CAN be unpinned */
+  pages_[frame].pin_count_--;
+  pages_[frame].is_dirty_ |= is_dirty;
+
+  /* move the page to replacer */
+  /* NOTE: can this if be removed */
+  if (pages_[frame].GetPinCount() == 0) { /* move the page into replacer only when reflag = 0 */
+    replacer_->Unpin(frame);
+  }
+  LOG_INFO("Unpin page %d from bf, present pin_cnt: %d", page_id, pages_[frame].pin_count_);
+  return true;
+}
 
 bool BufferPoolManager::FlushPageImpl(page_id_t page_id) {
   // Make sure you call DiskManager::WritePage!
