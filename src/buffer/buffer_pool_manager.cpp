@@ -116,14 +116,14 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
     return true;
   }
 
-  /* IF: the number of unpinned pages less or equal to 0, CANNOT unpin */
+  /* IF: return false if the page pin count is <= 0 before this call */
   frame = page_table_[page_id];
   if (pages_[frame].GetPinCount() <= 0) {
     LOG_ERROR("Unpin page %d failed, pincnt <= 0", page_id);
     return false;
   }
 
-  /* the page CAN be unpinned */
+  /* CASE: the page CAN be unpinned */
   pages_[frame].pin_count_--;
   pages_[frame].is_dirty_ |= is_dirty;
 
@@ -137,8 +137,27 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
 }
 
 bool BufferPoolManager::FlushPageImpl(page_id_t page_id) {
+  frame_id_t frame;
   // Make sure you call DiskManager::WritePage!
-  return false;
+
+  /* IF: page NOT found */
+  if (page_table_.find(page_id) == page_table_.end()) {
+    LOG_ERROR("Flush page %d failed, not found in page table", page_id);
+    return false; /* return false if the page could not be found in the page table */
+  }
+
+  /* IF: the page hasn't been modified */
+  frame = page_table_[page_id];
+  if (!pages_[frame].IsDirty()) {
+    LOG_INFO("Flush page %d without dirty", page_id);
+    return true;
+  }
+
+  /* CASE: the page has been modified, write back to disk first */
+  disk_manager_->WritePage(page_id, pages_[frame].data_);
+  pages_[frame].is_dirty_ = false;
+  LOG_INFO("Flush page %d dirty, write back to disk", page_id);
+  return true;
 }
 
 Page *BufferPoolManager::NewPageImpl(page_id_t *page_id) {
