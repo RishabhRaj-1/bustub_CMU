@@ -45,9 +45,9 @@ bool ClockReplacer::Victim(frame_id_t *frame_id) {
       ret = true;                        /* found the victim, break immediately */
       break;
     }
+    /* IF a frame is in the `ClockReplacer`,
+     * but its ref flag is set to true, change it to false instead */
     if (inflag[idx] && reflag[idx]) {
-      /* ELSE IF a frame is in the `ClockReplacer`,
-       * but its ref flag is set to true, change it to false instead */
       reflag[idx] = false; /* change ref flag to false, victim later */
       /* choose another candi to victim */
       candi = (candi == -1) ? idx : candi; /* IF there's no candidate, the first idx is to victim */
