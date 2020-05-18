@@ -227,7 +227,31 @@ bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
   // 1.   If P does not exist, return true.
   // 2.   If P exists, but has a non-zero pin-count, return false. Someone is using the page.
   // 3.   Otherwise, P can be deleted. Remove P from the page table, reset its metadata and return it to the free list.
-  return false;
+
+  /* IF S1: P does NOT exist, return true. */
+  if (page_id == INVALID_PAGE_ID || page_table_.find(page_id) == page_table_.end()) {
+    LOG_INFO("Delete non-ex page %d suc", page_id);
+    return true;
+  }
+
+  /* CASE S2&3: P exists */
+  frame_id_t delete_id = page_table_[page_id]; /* Search the page table for the requested page (P) */
+
+  /* IF S2: P has a non-zero pin-count, return false. Someone is using the page */
+  if (pages_[delete_id].GetPinCount()) {
+    LOG_ERROR("Delete page %d failed, in use", page_id);
+    return false;
+  }
+
+  /* CASE S3: P can be deleted */
+  disk_manager_->DeallocatePage(page_id);
+  page_table_.erase(page_id);                   /* remove P from the page table */
+  pages_[delete_id].page_id_ = INVALID_PAGE_ID; /* reset P's metadata */
+  pages_[delete_id].is_dirty_ = false;          /* reset P's metadata */
+  free_list_.push_back(delete_id);              /* return P to the free list */
+
+  LOG_INFO("Del page %d suc, from bf", page_id);
+  return true;
 }
 
 void BufferPoolManager::FlushAllPagesImpl() {
