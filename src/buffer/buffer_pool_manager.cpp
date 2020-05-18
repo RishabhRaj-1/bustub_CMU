@@ -126,12 +126,7 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
   /* CASE: the page CAN be unpinned */
   pages_[frame].pin_count_--;
   pages_[frame].is_dirty_ |= is_dirty;
-
-  /* move the page to replacer */
-  /* NOTE: can this if be removed */
-  if (pages_[frame].GetPinCount() == 0) { /* move the page into replacer only when reflag = 0 */
-    replacer_->Unpin(frame);
-  }
+  replacer_->Unpin(frame);
   LOG_INFO("Unpin page %d from bf, present pin_cnt: %d", page_id, pages_[frame].pin_count_);
   return true;
 }
@@ -187,20 +182,24 @@ Page *BufferPoolManager::NewPageImpl(page_id_t *page_id) {
 
   /* There's NO free page in fl */
   /* S2 CASE: there's free page in replacer, pick a victim page P from replacer */
+  LOG_INFO("No free page in fl, pick a victim page P from replacer...");
   frame_id_t candi_id;
+  page_id_t victim_id;
   bool evict_suc = replacer_->Victim(&candi_id);
-  page_id_t victim_id = pages_[candi_id].GetPageId();
 
   /* S1 IF: all the pages in the buffer pool are pinned, return nullptr */
   if (!evict_suc) { /* there's NO space in replacer */
+    LOG_INFO("All the pages in the buffer pool are pinned, return nullptr");
     return nullptr;
   }
 
   /* IF: candi page is dirty, then flush the dirty page */
+  victim_id = pages_[candi_id].GetPageId();
   if (pages_[candi_id].IsDirty()) {
     bool flu_suc = FlushPageImpl(victim_id);
     /* IF the dirty candi page could not be found in the page table */
     if (!flu_suc) {
+      LOG_INFO("The dirty candi page could not be found in the page table");
       return nullptr;
     }
   }
