@@ -231,7 +231,12 @@ bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
 }
 
 void BufferPoolManager::FlushAllPagesImpl() {
-  // You can do it!
+  for (auto i = 0; i < pool_size_; i++) {
+    if (pages_[i].IsDirty()) {
+      FlushPageImpl(pages_[i].GetPageId());
+    }
+  }
+  LOG_INFO("All pages have been flushed!");
 }
 
 }  // namespace bustub
