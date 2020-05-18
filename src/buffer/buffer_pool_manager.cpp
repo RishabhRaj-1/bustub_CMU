@@ -15,6 +15,8 @@
 #include <list>
 #include <unordered_map>
 
+#include "common/logger.h" /* for debugging, delete after pass all the test */
+
 namespace bustub {
 
 BufferPoolManager::BufferPoolManager(size_t pool_size, DiskManager *disk_manager, LogManager *log_manager)
@@ -42,6 +44,41 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
   // 2.     If R is dirty, write it back to the disk.
   // 3.     Delete R from the page table and insert P.
   // 4.     Update P's metadata, read in the page content from disk, and then return a pointer to P.
+
+  /* S1: Search the page table for the requested page (P) */
+  /* S1.1: IF P exists, pin it and return it immediately */
+  if (page_table_.find(page_id) != page_table_.end()) {
+    frame_id_t p_requested = page_table_[page_id]; /* the requested page (P) */
+
+    replacer_->Pin(p_requested); /* pin it */
+    pages_[p_requested].pin_count_ += 1;
+
+    LOG_INFO("Fetch page %d from mem", page_id);
+    return &pages_[p_requested];
+  } else {               /* S1.2: If P does NOT exist, find a replacement page (R) */
+    frame_id_t r_target; /* replacement page (R) */
+
+    /* IF: search the free list first */
+    if (free_list_.size()) {
+      r_target = free_list_.front();
+      free_list_.pop_front();
+      replacer_->Pin(r_target);
+      pages_[r_target].pin_count_++; /* all in-memory pages in the system are represented by Page */
+
+      /* read to buffer */
+      pages_[r_target].page_id_ = page_id;
+      pages_[r_target].is_dirty_ = false;
+      page_table_[page_id] = r_target;
+      disk_manager_->ReadPage(page_id, pages_[r_target].data_);
+
+      LOG_INFO("Fetch page %d from the fl", page_id);
+      return &pages_[r_target];
+
+    } else { /* ELSE: search the replacer if not found in fl */
+      r_target = 3;
+    }
+  }
+
   return nullptr;
 }
 
