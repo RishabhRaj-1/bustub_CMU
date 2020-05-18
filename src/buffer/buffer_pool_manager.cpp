@@ -77,13 +77,15 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
   }
 
   /* S1.2 ELSE: search the replacer if not found in fl */
-  bool evi_suc = replacer_->Victim(&r_target);         /* find the victim */
-  page_id_t evict_page = pages_[r_target].GetPageId(); /* get the victim page id */
+  bool evi_suc = replacer_->Victim(&r_target); /* find the victim */
+  page_id_t evict_page;
 
   /* IF no victim was found */
   if (!evi_suc) {
     return nullptr;
   }
+
+  evict_page = pages_[r_target].GetPageId(); /* get the victim page id */
 
   /* S2 IF: R is dirty, write it back to the disk */
   if (pages_[r_target].IsDirty()) {           /* page in memory has been modified from that on disk */
@@ -237,7 +239,7 @@ bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
   frame_id_t delete_id = page_table_[page_id]; /* Search the page table for the requested page (P) */
 
   /* IF S2: P has a non-zero pin-count, return false. Someone is using the page */
-  if (pages_[delete_id].GetPinCount()!= 0) {
+  if (pages_[delete_id].GetPinCount() != 0) {
     LOG_ERROR("Delete page %d failed, in use", page_id);
     return false;
   }
