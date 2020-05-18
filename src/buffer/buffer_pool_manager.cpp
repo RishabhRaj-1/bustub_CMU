@@ -255,7 +255,7 @@ bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
 }
 
 void BufferPoolManager::FlushAllPagesImpl() {
-  for (auto i = 0; i < pool_size_; i++) {
+  for (size_t i = 0; i < pool_size_; i++) {
     if (pages_[i].IsDirty()) {
       FlushPageImpl(pages_[i].GetPageId());
     }
