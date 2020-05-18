@@ -237,7 +237,7 @@ bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
   frame_id_t delete_id = page_table_[page_id]; /* Search the page table for the requested page (P) */
 
   /* IF S2: P has a non-zero pin-count, return false. Someone is using the page */
-  if (pages_[delete_id].GetPinCount()) {
+  if (pages_[delete_id].GetPinCount()!= 0) {
     LOG_ERROR("Delete page %d failed, in use", page_id);
     return false;
   }
