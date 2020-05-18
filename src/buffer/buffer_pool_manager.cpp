@@ -66,7 +66,7 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
     replacer_->Pin(r_target);
     pages_[r_target].pin_count_++; /* all in-memory pages in the system are represented by Page */
 
-    /* read to buffer */
+    /* load to page table */
     pages_[r_target].page_id_ = page_id;
     pages_[r_target].is_dirty_ = false;
     page_table_[page_id] = r_target;
@@ -166,7 +166,59 @@ Page *BufferPoolManager::NewPageImpl(page_id_t *page_id) {
   // 2.   Pick a victim page P from either the free list or the replacer. Always pick from the free list first.
   // 3.   Update P's metadata, zero out memory and add P to the page table.
   // 4.   Set the page ID output parameter. Return a pointer to P.
-  return nullptr;
+
+  /* S2 IF: there's free page in fl, pick a victim page P from fl */
+  if (!free_list_.empty()) {
+    frame_id_t free_id = free_list_.front();
+    free_list_.pop_front();
+
+    /* load to page table */
+    *page_id = disk_manager_->AllocatePage();
+    pages_[free_id].ResetMemory();
+    pages_[free_id].page_id_ = *page_id;
+    pages_[free_id].pin_count_ = 1;
+    pages_[free_id].is_dirty_ = false;
+    replacer_->Pin(free_id);
+    page_table_[*page_id] = free_id;
+
+    LOG_INFO("New page %d created from fl", *page_id);
+    return &pages_[free_id];
+  }
+
+  /* There's NO free page in fl */
+  /* S2 CASE: there's free page in replacer, pick a victim page P from replacer */
+  frame_id_t candi_id;
+  bool evict_suc = replacer_->Victim(&candi_id);
+  page_id_t victim_id = pages_[candi_id].GetPageId();
+
+  /* S1 IF: all the pages in the buffer pool are pinned, return nullptr */
+  if (!evict_suc) { /* there's NO space in replacer */
+    return nullptr;
+  }
+
+  /* IF: candi page is dirty, then flush the dirty page */
+  if (pages_[candi_id].IsDirty()) {
+    bool flu_suc = FlushPageImpl(victim_id);
+    /* IF the dirty candi page could not be found in the page table */
+    if (!flu_suc) {
+      return nullptr;
+    }
+  }
+
+  /* S3: Update P's metadata, zero out memory and add P to the page table */
+  page_table_.erase(victim_id);
+  *page_id = disk_manager_->AllocatePage();
+  pages_[candi_id].ResetMemory(); /* zero out memory */
+  /* add P to the page table */
+  pages_[candi_id].page_id_ = *page_id;
+  pages_[candi_id].pin_count_ = 1;
+  pages_[candi_id].is_dirty_ = false;
+  replacer_->Pin(candi_id);
+  page_table_[*page_id] = candi_id;
+
+  /* S4: set the page ID output parameter. Return a pointer to P */
+  LOG_INFO("New page %d created from replacer", *page_id);
+  return &pages_[candi_id];
 }
 
 bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
